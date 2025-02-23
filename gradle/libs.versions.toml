@@ -24,7 +24,8 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
-play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "google-maps" }
+play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "google-maps" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

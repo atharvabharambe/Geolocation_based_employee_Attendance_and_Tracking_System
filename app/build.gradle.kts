@@ -40,10 +40,11 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.auth)
     implementation(libs.play.services.location)
-    implementation(libs.play.services.maps) // Now it should resolve correctly
+    implementation(libs.play.services.maps) // Now correctly referenced
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }
+
 
 

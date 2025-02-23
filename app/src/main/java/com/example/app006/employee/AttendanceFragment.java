@@ -27,6 +27,7 @@ public class AttendanceFragment extends Fragment {
     private TextView locationText;
     private Button markAttendanceButton;
     private FusedLocationProviderClient fusedLocationClient;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
 
     @Nullable
     @Override
@@ -35,7 +36,6 @@ public class AttendanceFragment extends Fragment {
 
         locationText = view.findViewById(R.id.location_text);
         markAttendanceButton = view.findViewById(R.id.mark_attendance_button);
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
         markAttendanceButton.setOnClickListener(v -> getLocation());
@@ -44,14 +44,19 @@ public class AttendanceFragment extends Fragment {
     }
 
     private void getLocation() {
-        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
-                Toast.makeText(requireContext(), "Location is required to mark attendance.", Toast.LENGTH_LONG).show();
-            }
-            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            return;
+        if (checkPermissions()) {
+            checkGPS();
+        } else {
+            requestPermissions();
         }
-        checkGPS();
+    }
+
+    private boolean checkPermissions() {
+        return ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestPermissions() {
+        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
     }
 
     private void checkGPS() {
@@ -70,18 +75,40 @@ public class AttendanceFragment extends Fragment {
     }
 
     private void fetchLocation() {
-        fusedLocationClient.getLastLocation().addOnSuccessListener(requireActivity(), location -> {
-            if (location != null) {
-                String locationString = "Location: " + location.getLatitude() + ", " + location.getLongitude();
-                locationText.setText(locationString);
-                Toast.makeText(requireContext(), "Attendance Marked!", Toast.LENGTH_SHORT).show();
-            } else {
-                requestNewLocation();
+        if (!checkPermissions()) {
+            Toast.makeText(requireContext(), "Location permission is required.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        try {
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return;
             }
-        });
+
+            fusedLocationClient.getLastLocation().addOnSuccessListener(requireActivity(), location -> {
+                if (location != null) {
+                    String locationString = "Location: " + location.getLatitude() + ", " + location.getLongitude();
+                    locationText.setText(locationString);
+                    Toast.makeText(requireContext(), "Attendance Marked!", Toast.LENGTH_SHORT).show();
+
+                    // Open the MapFragment with coordinates
+                    getParentFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, MapFragment.newInstance(location.getLatitude(), location.getLongitude()))
+                            .addToBackStack(null)
+                            .commit();
+                } else {
+                    requestNewLocation();
+                }
+            });
+
+        } catch (SecurityException e) {
+            Toast.makeText(requireContext(), "Permission denied: Unable to fetch location.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void requestNewLocation() {
+        if (!checkPermissions()) return;
+
         LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
                 .setMinUpdateIntervalMillis(1000)
                 .build();
@@ -98,13 +125,19 @@ public class AttendanceFragment extends Fragment {
             }
         };
 
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
+        try {
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);
+            }
+        } catch (SecurityException e) {
+            Toast.makeText(requireContext(), "Permission denied: Unable to request location updates.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 fetchLocation();
             } else {
