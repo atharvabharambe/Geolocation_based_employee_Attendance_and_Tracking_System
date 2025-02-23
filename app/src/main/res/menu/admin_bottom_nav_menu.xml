@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_employee_lookup"
+        android:icon="@drawable/ic_search"
+        android:title="Employee Lookup" />
+
+    <item
+        android:id="@+id/nav_reporting"
+        android:icon="@drawable/ic_search"
+        android:title="Reports and Dashboards" />
+
+    <item
+        android:id="@+id/nav_attendance"
+        android:icon="@drawable/ic_search"
+        android:title="Attendance" />
+
+</menu>
